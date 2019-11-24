@@ -3,6 +3,7 @@ package dev.karolkoltun.expenses;
 import dev.karolkoltun.currency.CurrencyService;
 
 import java.math.BigDecimal;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ class HomeFinancesService {
     this.currencyService = currencyService;
   }
 
-  void addExpense(Expense expense) {
+  void addExpense(Expense expense) throws InvalidDateException, NegativeExpenseException {
     if (!expense.getCurrency().equals(PLN)) {
       BigDecimal amountInPln =
           currencyService.convert(expense.getAmount(), expense.getCurrency(), PLN);
@@ -30,11 +31,11 @@ class HomeFinancesService {
     }
 
     if (expense.getDate().isAfter(now())) {
-      return;
+     throw new InvalidDateException();
     }
 
     if (expense.getAmount().compareTo(ZERO) < 0) {
-      return;
+      throw new NegativeExpenseException();
     }
 
     expenses.add(expense);
@@ -42,5 +43,16 @@ class HomeFinancesService {
 
   List<Expense> getAllExpenses() {
     return new ArrayList<>(expenses);
+  }
+
+  List<Expense> getCategory(Category category){
+    List<Expense> list = getAllExpenses();
+    List<Expense> categoryList = new ArrayList<>();
+    for (int i =0; i<list.size(); i++){
+      if (list.get(i).getCategory().equals(category)){
+       categoryList.add(list.get(i));
+      }
+    }
+    return categoryList;
   }
 }
