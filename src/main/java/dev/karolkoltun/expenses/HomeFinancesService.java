@@ -3,6 +3,8 @@ package dev.karolkoltun.expenses;
 import dev.karolkoltun.currency.CurrencyService;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,5 +56,33 @@ class HomeFinancesService {
       }
     }
     return categoryList;
+  }
+
+  List<Expense> getDateTimeExpense(LocalDate beginDate, LocalDate endDate){
+    List<Expense> list = getAllExpenses();
+    List<Expense> dateTime = new ArrayList<>();
+
+    for (int i = 0; i<list.size(); i++){
+      if (list.get(i).getDate().isAfter(beginDate)&&list.get(i).getDate().isBefore(endDate)){
+        dateTime.add(list.get(i));
+      }
+    }
+    return dateTime;
+  }
+
+  List<Expense> getAllExpansesWithAvergeExpansesInGivenTime(LocalDate beginDate, LocalDate endDate){
+    int counter=0;
+   BigDecimal expenseSum = BigDecimal.valueOf(0);
+    List<Expense> list = getAllExpenses();
+    List<Expense> avergeListWithDate = getDateTimeExpense(beginDate, endDate);
+
+    for (int i =0; i<avergeListWithDate.size(); i++){
+      list.get(i).getAmount();
+      counter++;
+
+    }
+    return null;
+    ///DO POPRAWY///
+
   }
 }

@@ -1,6 +1,7 @@
 package dev.karolkoltun.expenses;
 
 import dev.karolkoltun.currency.Currency;
+import dev.karolkoltun.currency.CurrencyService;
 import dev.karolkoltun.currency.DynamicCurrencyService;
 import dev.karolkoltun.currency.PlainCurrencyService;
 import net.bytebuddy.asm.Advice;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.awt.*;
 import java.math.BigDecimal;
@@ -19,6 +22,7 @@ import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class HomeFinancesServiceTest {
     HomeFinancesService homeFinancesService;
@@ -104,8 +108,35 @@ class HomeFinancesServiceTest {
         categoryList=homeFinancesService.getCategory(Category.FOOD);
 
         assertEquals(2, categoryList.size());
+}
 
+@Test
+void shouldGetExpansesInExactTime() throws NegativeExpenseException, InvalidDateException {
+    Expense expense = new Expense(LocalDate.now(), BigDecimal.valueOf(100), "Orlen", Category.CARS);
+    Expense expense2 = new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(100), "Stokrotka", Category.FOOD);
+    Expense expense3 = new Expense(LocalDate.now().minusYears(2), BigDecimal.valueOf(100), "Żabka", Category.FOOD);
 
+    List<Expense> dateList;
+
+    homeFinancesService.addExpense(expense);
+    homeFinancesService.addExpense(expense2);
+    homeFinancesService.addExpense(expense3);
+
+    dateList=homeFinancesService.getDateTimeExpense(LocalDate.of(2016, 11, 22),LocalDate.of(2018, 11,11));
+
+    assertEquals(1, dateList.size());
+}
+
+@Test
+void shouldAddAndGetAvergeExpensesInGivenTime(){
+    Expense expense = new Expense(LocalDate.now(), BigDecimal.valueOf(150), "Orlen", Category.CARS);
+    Expense expense2 = new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(50), "Stokrotka", Category.FOOD);
+    Expense expense3 = new Expense(LocalDate.now().minusYears(2), BigDecimal.valueOf(50), "Żabka", Category.FOOD);
+    Expense expense4 = new Expense(LocalDate.now().minusYears(2), BigDecimal.valueOf(150), "Żabka", Category.FOOD);
+
+    List<Expense> dateListWithAverge;
+
+    dateListWithAverge = homeFinancesService.getAllExpansesWithAvergeExpansesInGivenTime(LocalDate.of(2016, 11, 22),LocalDate.of(2018, 11,11));
 }
 
 @Test
@@ -121,24 +152,36 @@ class HomeFinancesServiceTest {
 
 }
 
+
+
 @Test
     void shouldAddExpanseInForeignCurrency() throws NegativeExpenseException, InvalidDateException {
         //given
-        HomeFinancesService homeFinancesService = new HomeFinancesService(new DynamicCurrencyService());
+    CurrencyService currencyServiceMock = Mockito.mock(CurrencyService.class);
+
+        HomeFinancesService homeFinancesService = new HomeFinancesService(currencyServiceMock);
         Expense expenseInEur = new Expense(LocalDate.now().minusYears(1),
                 BigDecimal.valueOf(100),"Pizzeria Mario",Category.FOOD, Currency.EUR);
+
+        when(currencyServiceMock.convert(BigDecimal.valueOf(100), Currency.EUR, Currency.PLN))
+                .thenReturn(BigDecimal.valueOf(200));
 
         //when
     homeFinancesService.addExpense(expenseInEur);
 
     //then
-
     List<Expense> expenses = homeFinancesService.getAllExpenses();
+
     assertThat(expenses).containsExactly(expenseInEur);
 
     Expense addedExpense = expenses.get(0);
 
     assertThat(addedExpense).hasFieldOrPropertyWithValue("currency", Currency.PLN);
+
+    verify(currencyServiceMock, times(1)).
+            convert(BigDecimal.valueOf(100), Currency.EUR, Currency.PLN);
 }
+
+
 
 }
